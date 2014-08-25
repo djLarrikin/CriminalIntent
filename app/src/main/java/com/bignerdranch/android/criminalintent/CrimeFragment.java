@@ -9,6 +9,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -35,6 +36,7 @@ public class CrimeFragment extends Fragment {
     private static final String DIALOG_DATE = "date";
     private static final int REQUEST_DATE = 0;
     private static final int REQUEST_PHOTO = 1;
+    private static final String DIALOG_IMAGE = "image";
 	
 	private Crime mCrime;
 	private EditText mTitleField;
@@ -129,6 +131,18 @@ public class CrimeFragment extends Fragment {
         });
 
         mPhotoView = (ImageView)v.findViewById(R.id.crime_imageView);
+        mPhotoView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Photo p = mCrime.getPhoto();
+                if (p == null)
+                    return;
+
+                FragmentManager fm = getActivity().getSupportFragmentManager();
+                String path = getActivity().getFileStreamPath(p.getFilename()).getAbsolutePath();
+                ImageFragment.newInstance(path).show(fm, DIALOG_IMAGE);
+            }
+        });
 
         PackageManager pm = getActivity().getPackageManager();
         if (!pm.hasSystemFeature(PackageManager.FEATURE_CAMERA) && !pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT)){
@@ -137,6 +151,29 @@ public class CrimeFragment extends Fragment {
 		
 		return v;
 	}
+
+    private void showPhoto() {
+        // (Re)set the image button's image based on our photo
+        Photo p = mCrime.getPhoto();
+        BitmapDrawable b = null;
+        if (p != null) {
+            String path = getActivity().getFileStreamPath(p.getFilename()).getAbsolutePath();
+            b = PictureUtils.getScaledDrawable(getActivity(), path);
+        }
+        mPhotoView.setImageDrawable(b);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        showPhoto();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        PictureUtils.cleanImageView(mPhotoView);
+    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
@@ -170,7 +207,7 @@ public class CrimeFragment extends Fragment {
             if (filename != null){
                 Photo p = new Photo(filename);
                 mCrime.setPhoto(p);
-                Log.i(TAG, "Crime: " + mCrime.getTitle() + " has a photo!");
+                showPhoto();
             }
         }
     }
