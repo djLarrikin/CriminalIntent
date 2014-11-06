@@ -220,6 +220,10 @@ public class CrimeListFragment extends ListFragment {
 		}
 	}
 
+    public void updateUI(){
+        ((CrimeAdapter)getListAdapter()).notifyDataSetChanged();
+    }
+
     @Override
     public void onPause() {
         super.onPause();
